@@ -6,16 +6,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT
 
+// --- 라우트 가져오기 ---
 const sampleRoutes = require("./routes/sampleRoutes");
+const authRoutes = require('./routes/authRoutes');     // << auth 연결 추가
+const userRoutes = require('./routes/userRoutes');     // << user 연결 추가
 
-
+// --- 미들웨어 설정 ---
 app.use(cors());
 app.use(express.json());
+
+// --- API 라우트 등록 ---
 app.use('/api', sampleRoutes);
+app.use('/api/auth', authRoutes); // << 예서 추가 (Google 로그인 API)
+app.use('/api/users', userRoutes); // << 예서 추가 (인증이 필요한 사용자 정보 API)
 
 // Swagger setup
 require('./swagger/swagger')(app);
 
+// --- 서버 실행 ---
 app.listen(PORT, () => {
   console.log(`✅ 서버 실행 중: http://localhost:${PORT}`);
 });
