@@ -7,11 +7,16 @@ const app = express();
 const PORT = process.env.PORT
 
 const sampleRoutes = require("./routes/sampleRoutes");
+const authRoutes = require('./routes/authRoutes');
+const mypageRoutes = require("./routes/mypageRoutes");
 
 
 app.use(cors());
 app.use(express.json());
 app.use('/api', sampleRoutes);
+app.use('/auth', authRoutes);
+app.use("/mypage", mypageRoutes);
+
 
 // Swagger setup
 require('./swagger/swagger')(app);
