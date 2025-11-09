@@ -1,7 +1,9 @@
 // middlewares/auth.js
 
-const jwt = require("jsonwebtoken");
-require("dotenv").config(); // .env에서 JWT_SECRET을 불러오기 위해 필요
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config(); // .env에서 JWT_SECRET을 불러오기 위해 필요
 
 const auth = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -27,4 +29,4 @@ const auth = (req, res, next) => {
   }
 };
 
-module.exports = auth;
+export default auth;

@@ -1,6 +1,9 @@
-const express = require('express');
+// routes/authRoutes.js
+
+import express from "express";
+import authController from "../controllers/authController.js";
+
 const router = express.Router();
-const authController = require('../controllers/authController');
 
 /**
  * @swagger
@@ -12,7 +15,6 @@ const authController = require('../controllers/authController');
  *       302:
  *         description: 구글 로그인 페이지로 리다이렉트됨
  */
-
 
 /**
  * @swagger
@@ -34,7 +36,7 @@ const authController = require('../controllers/authController');
  *         description: 로그인 실패
  */
 
-router.get('/google', authController.googleLogin);
-router.get('/google/callback', authController.googleCallback);
+router.get("/google", authController.googleLogin);
+router.get("/google/callback", authController.googleCallback);
 
-module.exports = router;
+export default router;

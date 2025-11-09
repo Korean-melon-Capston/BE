@@ -1,4 +1,4 @@
-const db = require("../config/db");
+import db from "../config/db.js";
 
 const User = {
   // google_id + provider로 사용자 조회
@@ -21,7 +21,7 @@ const User = {
   }
 };
 
-module.exports = User;
+export default User;
 
 //google_id 는 google에서 제공하는 고유 id
 //provider 는 google임 (로그인 제공자)

@@ -1,6 +1,6 @@
-const MyPageModel = require("../models/mypageModel");
+import MyPageModel from "../models/mypageModel.js";
 
-const getMyPage = async (req, res) => {
+export const getMyPage = async (req, res) => {
   try {
     const userId = req.user.id; // JWT 인증 미들웨어를 통해 추출된 사용자 ID
     const user = await MyPageModel.findUserById(userId);
@@ -15,5 +15,3 @@ const getMyPage = async (req, res) => {
     res.status(500).json({ message: "서버 오류" });
   }
 };
-
-module.exports = { getMyPage };

@@ -1,4 +1,6 @@
-const db = require("../config/db");
+// models/mypageModel.js
+
+import db from "../config/db.js";
 
 const Mypage = {
   // 사용자 ID로 사용자 정보 조회
@@ -11,4 +13,4 @@ const Mypage = {
   }
 };
 
-module.exports = Mypage;
+export default Mypage;

@@ -1,7 +1,8 @@
-const express = require("express");
+import express from "express";
+import { getMyPage } from "../controllers/mypageController.js";
+import authenticate from "../middlewares/auth.js"; // JWT 인증 미들웨어
+
 const router = express.Router();
-const { getMyPage } = require("../controllers/mypageController");
-const authenticate = require("../middlewares/auth"); // JWT 인증 미들웨어
 
 /**
  * @swagger
@@ -21,4 +22,4 @@ const authenticate = require("../middlewares/auth"); // JWT 인증 미들웨어
  */
 router.get("/", authenticate, getMyPage);
 
-module.exports = router;
+export default router;

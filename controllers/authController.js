@@ -1,7 +1,8 @@
-require("dotenv").config();
-const axios = require("axios");
-const User = require("../models/userModel");
-const { createToken } = require("../utils/jwt");
+import dotenv from "dotenv";
+dotenv.config();
+import axios from "axios";
+import User from "../models/userModel.js";
+import { createToken } from "../utils/jwt.js";
 
 const authController = {
   // 1. 구글 로그인 리다이렉트
@@ -69,4 +70,4 @@ const authController = {
   }
 };
 
-module.exports = authController;
+export default authController;
