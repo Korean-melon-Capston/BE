@@ -1,4 +1,4 @@
-import { connectToModelServer, sendFrameToModel } from "../models/ws_Model.js";
+import { connectToModelServer } from "../models/ws_Model.js";
 
 export function handleClientConnection(clientSocket) {
   console.log("📡 Client connected to webserver");

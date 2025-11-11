@@ -9,6 +9,7 @@ import { initWebSocketServer } from "./routes/ws_Routes.js";
 import { connectToModelServer } from "./models/ws_Model.js";
 import authRoutes from "./routes/authRoutes.js";
 import mypageRoutes from "./routes/mypageRoutes.js";
+import motionRoutes from "./routes/motionRoutes.js";
 import swaggerSetup from "./swagger/swagger.js";
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/mypage", mypageRoutes);
+app.use("/motion", motionRoutes);
 
 
 // Swagger setup
