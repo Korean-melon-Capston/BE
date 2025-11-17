@@ -1,29 +1,6 @@
 import {
-  getBabyInfo,
   updateBabyInfo
 } from "../models/babyinfofixModel.js";
-
-// ✔ 아기 정보 조회
-export const getBabyInfoController = async (req, res) => {
-  try {
-    const { userId } = req.query;
-
-    if (!userId) {
-      return res.status(400).json({ error: "userId는 필수입니다." });
-    }
-
-    const babyInfo = await getBabyInfo(userId);
-
-    if (!babyInfo) {
-      return res.status(404).json({ error: "아기 정보가 없습니다." });
-    }
-
-    return res.status(200).json(babyInfo);
-  } catch (err) {
-    console.error("아기 정보 조회 오류:", err);
-    return res.status(500).json({ error: "서버 오류 발생" });
-  }
-};
 
 // ✔ 아기 정보 수정
 export const updateBabyInfoController = async (req, res) => {
