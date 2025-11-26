@@ -1,7 +1,8 @@
 import {
   getTotalSleepTime,
   getNapTime,
-  getEventCount,
+  getFallCount,
+  getMovementCount,
   getSleepQuality
 } from '../models/calendarModel.js';
 
@@ -14,13 +15,15 @@ const getBabySleepStats = async (req, res) => {
 
     const totalSleepTime = await getTotalSleepTime(babyId, date);
     const napTime = await getNapTime(babyId, date);
-    const eventCount = await getEventCount(babyId, date);
+    const fallCount = await getFallCount(babyId, date);
+    const movementCount = await getMovementCount(babyId, date);
     const sleepQuality = await getSleepQuality(babyId, date);
 
     return res.status(200).json({
       totalSleepTime,
       napTime,
-      eventCount,
+      fallCount,
+      movementCount,
       sleepQuality
     });
   } catch (error) {
