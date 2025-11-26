@@ -85,7 +85,7 @@ ${recordsText}
 
     // GPT 호출
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-mini", // 안정적
+      model: "gpt-5.1",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });
