@@ -1,4 +1,3 @@
-import { getLatestResult } from "../models/ws_Model.js";
 import { saveMotionEvent } from "../models/motionModel.js";
 
 let previousKeypoints = null;

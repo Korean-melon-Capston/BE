@@ -5,8 +5,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import jwt from "jsonwebtoken";
-import { initWebSocketServer } from "./routes/ws_Routes.js";
-import { connectToModelServer } from "./models/ws_Model.js";
 import authRoutes from "./routes/authRoutes.js";
 import mypageRoutes from "./routes/mypageRoutes.js";
 import motionRoutes from "./routes/motionRoutes.js";
@@ -37,7 +35,6 @@ app.use("/api/reports", reportRoutes);
 swaggerSetup(app);
 
 const server = http.createServer(app);
-initWebSocketServer(server);
 
 server.listen(PORT, () => {
   console.log(`✅ 서버 실행 중: http://localhost:${PORT}`);
@@ -56,6 +53,3 @@ console.log(`${devToken}\n`);
 app.get("/", (req, res) => {
   res.send("베이비모니터링 API 서버입니다. Swagger는 /api-docs 에 있습니다.");
 });
-
-// ✅ FastAPI 모델 서버 자동 연결
-connectToModelServer();

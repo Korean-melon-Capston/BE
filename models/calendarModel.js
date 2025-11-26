@@ -40,15 +40,24 @@ const getNapTime = async (babyId, date) => {
   return Math.floor(total / 60);
 };
 
-const getEventCount = async (babyId, date) => {
+const getFallCount = async (babyId, date) => {
   const { nightStart, nightEnd } = getDateRanges(date);
   const [records] = await db.execute(
-    `SELECT event_count FROM baby_records
+    `SELECT fall_count FROM baby_records
      WHERE user_id = ? AND sleep_start BETWEEN ? AND ?`,
     [babyId, nightStart, nightEnd]
   );
+  return records.reduce((acc, curr) => acc + (curr.fall_count || 0), 0);
+};
 
-  return records.reduce((acc, curr) => acc + (curr.event_count || 0), 0);
+const getMovementCount = async (babyId, date) => {
+  const { nightStart, nightEnd } = getDateRanges(date);
+  const [records] = await db.execute(
+    `SELECT movement_count FROM baby_records
+     WHERE user_id = ? AND sleep_start BETWEEN ? AND ?`,
+    [babyId, nightStart, nightEnd]
+  );
+  return records.reduce((acc, curr) => acc + (curr.movement_count || 0), 0);
 };
 
 const getSleepQuality = async (babyId, date) => {
@@ -67,6 +76,7 @@ const getSleepQuality = async (babyId, date) => {
 export {
   getTotalSleepTime,
   getNapTime,
-  getEventCount,
+  getFallCount,
+  getMovementCount,
   getSleepQuality
 };
