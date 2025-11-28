@@ -14,6 +14,8 @@ import babyinfoRoutes from "./routes/babyinfoRoutes.js";
 import babyinfofixRoutes from "./routes/babyinfofixRoutes.js";
 import recordRoutes from "./routes/recordRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import eventLogRoutes from "./routes/eventRoutes.js";
+
 
 dotenv.config();
 
@@ -30,6 +32,7 @@ app.use("/baby", babyinfoRoutes);
 app.use("/babyfix", babyinfofixRoutes);
 app.use("/api/records", recordRoutes); 
 app.use("/api/reports", reportRoutes);
+app.use("/eventlog", eventLogRoutes);
 
 // Swagger setup
 swaggerSetup(app);
