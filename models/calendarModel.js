@@ -40,24 +40,34 @@ const getNapTime = async (babyId, date) => {
   return Math.floor(total / 60);
 };
 
-const getFallCount = async (babyId, date) => {
+const getFallCount = async (userId, date) => {
   const { nightStart, nightEnd } = getDateRanges(date);
-  const [records] = await db.execute(
-    `SELECT fall_count FROM baby_records
-     WHERE user_id = ? AND sleep_start BETWEEN ? AND ?`,
-    [babyId, nightStart, nightEnd]
+
+  const [rows] = await db.execute(
+    `SELECT COUNT(*) AS event_count
+       FROM events
+      WHERE user_id = ?
+        AND event_type = 'fall'
+        AND event_time BETWEEN ? AND ?`,
+    [userId, nightStart, nightEnd]
   );
-  return records.reduce((acc, curr) => acc + (curr.fall_count || 0), 0);
+
+  return rows[0]?.event_count ?? 0;
 };
 
-const getMovementCount = async (babyId, date) => {
+
+const getMovementCount = async (userId, date) => {
   const { nightStart, nightEnd } = getDateRanges(date);
-  const [records] = await db.execute(
-    `SELECT movement_count FROM baby_records
-     WHERE user_id = ? AND sleep_start BETWEEN ? AND ?`,
-    [babyId, nightStart, nightEnd]
+
+  const [rows] = await db.execute(
+    `SELECT COUNT(*) AS event_count
+       FROM events
+      WHERE user_id = ?
+        AND event_type = 'movement'
+        AND event_time BETWEEN ? AND ?`,
+    [userId, nightStart, nightEnd]
   );
-  return records.reduce((acc, curr) => acc + (curr.movement_count || 0), 0);
+  return rows[0]?.event_count ?? 0;
 };
 
 const getSleepQuality = async (babyId, date) => {
