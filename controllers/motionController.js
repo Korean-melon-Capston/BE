@@ -1,11 +1,11 @@
-import { saveMotionEvent } from "../models/motionModel.js";
+import { broadcastMotion } from "../utils/wsServer.js";
+import { getLatestResult } from "../utils/resultStore.js";
 
 let previousKeypoints = null;
 let turnCount = 0;
+let lastMotionResult = null;
 
-/**
- * 두 프레임 간의 keypoint 변화량 계산 (뒤척임 감지)
- */
+/** 두 프레임 간 변화량 계산 */
 function calculateMotion(current, previous) {
   if (!current || !previous) return 0;
 
@@ -26,37 +26,77 @@ function calculateMotion(current, previous) {
   return count > 0 ? totalChange / count : 0;
 }
 
-/**
- * 뒤척임 감지 로직 실행
- */
+/** 최신 resultStore에서 keypoints를 읽어 뒤척임 감지 */
 export async function detectMotion() {
-  const { keypoints } = getLatestResult();
+  const latest = getLatestResult();
 
-  if (!keypoints || keypoints.length === 0) {
-    console.log("⚠️ No keypoints yet.");
-    return { turns: turnCount, message: "No keypoints detected" };
+  if (!latest || !latest.keypoints || latest.keypoints.length === 0) {
+    console.log("⚠️ No keypoints in resultStore");
+    const fallback = {
+      turns: turnCount,
+      movement: 0,
+      timestamp: Date.now(),
+      message: "No keypoints detected",
+    };
+    lastMotionResult = fallback;
+    return fallback;
   }
+
+  const person = latest.keypoints[0]; // 한 사람만 있다고 가정
+  let movement = 0;
+  const timestamp = Date.now();
 
   if (previousKeypoints) {
-    const movement = calculateMotion(keypoints[0], previousKeypoints[0]);
-    if (movement > 15) { // 이거 실험해서 조절해야함 값 찾아야지
+    movement = calculateMotion(person, previousKeypoints);
+
+    if (movement > 15) {
       turnCount++;
-      await saveMotionEvent(turnCount); // 🟢 DB에 저장
       console.log(`🌀 Motion detected! Total turns: ${turnCount}`);
+    } else {
+      console.log(`ℹ️ Movement below threshold: ${movement}`);
     }
+
+    // 웹소켓으로 모션 정보 전송 (movement, timestamp, turns)
+    try {
+      broadcastMotion({
+        movement,
+        timestamp,
+        turns: turnCount,
+      });
+    } catch (err) {
+      console.error("❌ Failed to broadcast motion update via WebSocket:", err);
+    }
+  } else {
+    console.log("ℹ️ First frame received, baseline keypoints stored.");
   }
 
-  previousKeypoints = keypoints;
-  return { turns: turnCount };
+  previousKeypoints = person;
+
+  const result = {
+    turns: turnCount,
+    movement,
+    timestamp,
+  };
+  lastMotionResult = result;
+  return result;
 }
 
-/**
- * 뒤척임 횟수 조회용 API
- */
+/** 모션 조회용 API (마지막 계산 결과 조회) */
 export async function getMotionStatus(req, res) {
-  const result = await detectMotion();
+  if (!lastMotionResult) {
+    return res.json({
+      message: "No motion data yet",
+      turns: turnCount,
+      movement: 0,
+      timestamp: null,
+    });
+  }
+
+  const { turns, movement, timestamp } = lastMotionResult;
   res.json({
     message: "Current motion detection status",
-    turns: result.turns,
+    turns,
+    movement,
+    timestamp,
   });
 }
