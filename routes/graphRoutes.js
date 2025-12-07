@@ -2,7 +2,7 @@
 
 import express from "express";
 import { getGraphData } from "../controllers/graphController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
+import authMiddleware from "../middlewares/auth.js";
 
 const router = express.Router();
 
