@@ -16,11 +16,15 @@ import recordRoutes from "./routes/recordRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import eventLogRoutes from "./routes/eventRoutes.js";
 import graphRoutes from "./routes/graphRoutes.js";
+import modelRoutes from "./routes/modelRoutes.js";
+
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(express.json({ limit: "10mb" }));
 
 app.use(cors());
 app.use(express.json());
@@ -34,9 +38,11 @@ app.use("/api/records", recordRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/eventlog", eventLogRoutes);
 app.use("/api/graph", graphRoutes);
+app.use("/api/model", modelRoutes);
 
 // Swagger setup
 swaggerSetup(app);
+
 
 const server = http.createServer(app);
 
