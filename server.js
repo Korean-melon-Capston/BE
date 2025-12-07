@@ -6,10 +6,7 @@ import dotenv from "dotenv";
 import http from "http";
 import jwt from "jsonwebtoken";
 
-<<<<<<< Updated upstream
 // Routes
-=======
->>>>>>> Stashed changes
 import authRoutes from "./routes/authRoutes.js";
 import mypageRoutes from "./routes/mypageRoutes.js";
 import motionRoutes from "./routes/motionRoutes.js";
@@ -24,32 +21,19 @@ import graphRoutes from "./routes/graphRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import modelRoutes from "./routes/modelRoutes.js";
 
-<<<<<<< Updated upstream
-=======
-// 🔹 추가: WebSocket 초기화 함수
+// 🔹 WebSocket 초기화 함수
 import { initWebSocket } from "./utils/wsServer.js";
 
->>>>>>> Stashed changes
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-<<<<<<< Updated upstream
-// JSON 설정 (중복 제거)
-=======
-// 큰 base64 이미지 받으려면 limit 키우는 거 유지
->>>>>>> Stashed changes
+// JSON 설정: 큰 base64 이미지 받으려면 limit 키우는 거 유지
 app.use(express.json({ limit: "10mb" }));
 app.use(cors());
-<<<<<<< Updated upstream
 
 // Routes Mounting
-=======
-// 아래 줄은 사실 중복이라 지워도 됨
-// app.use(express.json());
-
->>>>>>> Stashed changes
 app.use("/auth", authRoutes);
 app.use("/mypage", mypageRoutes);
 app.use("/motion", motionRoutes);
