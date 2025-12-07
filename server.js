@@ -5,6 +5,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
 import jwt from "jsonwebtoken";
+
+// Routes
 import authRoutes from "./routes/authRoutes.js";
 import mypageRoutes from "./routes/mypageRoutes.js";
 import motionRoutes from "./routes/motionRoutes.js";
@@ -17,27 +19,32 @@ import reportRoutes from "./routes/reportRoutes.js";
 import eventLogRoutes from "./routes/eventRoutes.js";
 import graphRoutes from "./routes/graphRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import modelRoutes from "./routes/modelRoutes.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// JSON 설정 (중복 제거)
+app.use(express.json({ limit: "10mb" }));
 app.use(cors());
-app.use(express.json());
+
+// Routes Mounting
 app.use("/auth", authRoutes);
 app.use("/mypage", mypageRoutes);
 app.use("/motion", motionRoutes);
 app.use("/calendar", calendarRoutes);
 app.use("/baby", babyinfoRoutes);
 app.use("/babyfix", babyinfofixRoutes);
-app.use("/api/records", recordRoutes); 
+app.use("/api/records", recordRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/eventlog", eventLogRoutes);
 app.use("/api/graph", graphRoutes);
 app.use("/api/notify", notificationRoutes);
+app.use("/api/model", modelRoutes);
 
-// Swagger setup
+// Swagger
 swaggerSetup(app);
 
 const server = http.createServer(app);
