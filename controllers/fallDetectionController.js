@@ -1,28 +1,29 @@
-// controllers/fallDetectionController.js
-import { isOutOfBedROI } from '../models/fallDetectionModel.js';  // 모델을 임포트
+// controllers/fallController.js
+import { isOutOfBedROI } from "../models/fallDetectionModel.js";
 
-// 낙상 감지 API
 export const detectFall = async (req, res) => {
   try {
-    const { keypoints, userId } = req.body;  // 요청에서 keypoints와 userId 받기
+    const { keypoints } = req.body;
+    const userId = req.user?.id;  // 🔥 토큰 기반 userId 사용
 
-    // 필수 값 확인
     if (!keypoints || !userId) {
-      return res.status(400).json({ message: 'keypoints와 userId는 필수입니다.' });
+      return res.status(400).json({
+        message: "keypoints 또는 userId 누락",
+      });
     }
 
-    // 낙상 감지 판단
-    const outOfBed = isOutOfBedROI(keypoints); // 모델에서 ROI 벗어났는지 체크
+    const fall = await isOutOfBedROI(keypoints, userId);
 
-    if (outOfBed) {
-      console.log("낙상 감지: 아기가 침대에서 이탈했습니다. userId:", userId);
-      return res.status(200).json({ message: '낙상 감지됨', status: true });
-    }
-
-    return res.status(200).json({ message: '낙상 없음', status: false });
+    return res.status(200).json({
+      message: fall ? "낙상 감지됨" : "낙상 없음",
+      status: fall,
+    });
 
   } catch (error) {
-    console.error('detectFall error:', error);
-    return res.status(500).json({ message: '서버 오류' });
+    console.error("detectFall error:", error);
+    return res.status(500).json({
+      message: "서버 오류",
+      error: error.message,
+    });
   }
 };
