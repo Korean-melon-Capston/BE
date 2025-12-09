@@ -61,20 +61,31 @@ export async function detectMotion() {
   if (previousKeypoints) {
     movement = calculateMotion(person, previousKeypoints);
 
-    if (movement > 15) {
+    if (movement > 1) {
       turnCount++;
-      console.log(`🌀 Motion detected! Total turns: ${turnCount}`);
+      console.log(
+        `🌀 [MOTION DETECTED] movement=${movement.toFixed(
+          3
+        )}, turns=${turnCount}, ts=${timestamp}`
+      );
     } else {
-      console.log(`ℹ️ Movement below threshold: ${movement}`);
+      console.log(
+        `ℹ️ [MOTION BELOW THRESHOLD] movement=${movement.toFixed(
+          3
+        )}, threshold=1`
+      );
     }
 
     // 웹소켓으로 모션 정보 전송 (movement, timestamp, turnCount)
     try {
-      broadcastMotion({
+      const payload = {
         movement,
         timestamp,
-        turnCount, // 🔹 wsServer.broadcastMotion 이 turnCount 를 기대함
-      });
+        turnCount,
+      };
+
+      console.log("📡 [WS] broadcasting motion update:", payload);
+      broadcastMotion(payload);
     } catch (err) {
       console.error(
         "❌ Failed to broadcast motion update via WebSocket:",
@@ -82,7 +93,9 @@ export async function detectMotion() {
       );
     }
   } else {
-    console.log("ℹ️ First frame received, baseline keypoints stored.");
+    console.log(
+      "ℹ️ First frame received, baseline keypoints stored. (no motion calc yet)"
+    );
   }
 
   previousKeypoints = person;
