@@ -1,7 +1,9 @@
 // controllers/modelController.js
 import axios from "axios";
 import { setLatestResult } from "../utils/resultStore.js";
-import { broadcastFrame, broadcastPose } from "../utils/wsServer.js";
+import { broadcastFrame, broadcastPose, broadcastFallEvent } from "../utils/wsServer.js";
+import { isOutOfBedROI } from "../models/fallDetectionModel.js";
+import { detectMotion } from "./motionController.js";
 
 const MODEL_SERVER_URL =
   process.env.MODEL_SERVER_URL || "http://127.0.0.1:8000";
@@ -14,6 +16,7 @@ const MODEL_SERVER_URL =
 export const inferFromModelServer = async (req, res) => {
   try {
     const { imageBase64, timestamp } = req.body;
+    const userId = req.user?.id;
 
     // 입력 값 검증
     if (!imageBase64) {
@@ -48,7 +51,24 @@ export const inferFromModelServer = async (req, res) => {
 
     // 3️⃣ 모델서버에서 받은 최신 결과를 서버 메모리에 저장 (모션 감지용)
     const modelResult = response.data;
+    let fallDetected = false;
     setLatestResult(modelResult);
+
+    // 🔹 뒤척임 감지도 여기서 함께 수행
+    try {
+      const motionResult = await detectMotion();
+      if (motionResult) {
+        console.log(
+          `📈 [MotionDetection] movement=${
+            motionResult.movement?.toFixed?.(3) ?? motionResult.movement
+          }, turns=${motionResult.turns}, ts=${motionResult.timestamp}`
+        );
+      } else {
+        console.log("ℹ️ [MotionDetection] detectMotion returned no result");
+      }
+    } catch (e) {
+      console.error("⚠️ [MotionDetection] detectMotion 호출 중 오류:", e);
+    }
 
     // 4️⃣ 포즈 정보도 WebSocket으로 부모폰에 전달 (옵션)
     try {
@@ -67,10 +87,34 @@ export const inferFromModelServer = async (req, res) => {
       console.error("⚠️ broadcastPose error:", e.message);
     }
 
+    // 5️⃣ ROI 기반 낙상 감지 (userId가 있을 때만)
+    try {
+      if (!userId) {
+        console.log("ℹ️ [FallDetection] userId 없음 → 낙상 판정 스킵");
+      } else if (modelResult && Array.isArray(modelResult.keypoints) && modelResult.keypoints.length > 0) {
+        const fall = await isOutOfBedROI(modelResult.keypoints, userId);
+        fallDetected = !!fall;
+
+        if (fallDetected) {
+          const nowIso = new Date().toISOString();
+          console.log(`🚨 [FallDetection] User ${userId} — FALL DETECTED at ${nowIso}`);
+          // 필요 시 신뢰도(confidence)는 일단 1.0으로 고정, 나중에 모델에서 내려주면 교체
+          broadcastFallEvent(1.0, { userId, detectedAt: nowIso });
+        } else {
+          console.log(`ℹ️ [FallDetection] User ${userId} — no fall detected`);
+        }
+      } else {
+        console.log("ℹ️ [FallDetection] keypoints 없음 → 낙상 판정 스킵");
+      }
+    } catch (e) {
+      console.error("⚠️ [FallDetection] 낙상 판정 중 오류:", e);
+    }
+
     // 5️⃣ 모델서버에서 받은 결과를 그대로 프론트(카메라폰)로 전달
     return res.status(200).json({
       message: "모델 추론 성공",
       result: modelResult, // 여기 안에 keypoints, bbox 등
+      fallDetected,
     });
   } catch (error) {
     console.error("inferFromModelServer error:", error.message);
