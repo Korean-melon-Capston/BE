@@ -218,7 +218,7 @@ ${recordsText}
 - 보호자가 바로 적용할 수 있는 실천 팁을 bullet 3~5개 작성하세요.
 - 문장은 따뜻한 제안형으로 작성하세요.
 
-반드시 섹션 제목과 bullet 포맷 유지.
+반드시 섹션 제목과 bullet 포맷 유지, 마크다운 절대 사용 금지
 `.trim();
 
     const completion = await openai.chat.completions.create({
@@ -318,7 +318,7 @@ ${recordsText}
 - 보호자가 바로 적용할 수 있는 팁 3~5개 bullet로 작성하세요.
 - "해보세요" 같은 따뜻한 제안형 문장 사용
 
-반드시 섹션 제목과 bullet 포맷 유지.
+반드시 섹션 제목과 bullet 포맷 유지, 마크다운 절대 사용 금지
 `.trim();
 
     const completion = await openai.chat.completions.create({
