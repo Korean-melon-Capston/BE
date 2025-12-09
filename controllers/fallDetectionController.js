@@ -14,6 +14,12 @@ export const detectFall = async (req, res) => {
 
     const fall = await isOutOfBedROI(keypoints, userId);
 
+    if (fall) {
+      console.log(`🚨 [FallDetection] User ${userId} — FALL DETECTED at ${new Date().toISOString()}`);
+    } else {
+      console.log(`ℹ️ [FallDetection] User ${userId} — no fall detected`);
+    }
+
     return res.status(200).json({
       message: fall ? "낙상 감지됨" : "낙상 없음",
       status: fall,
