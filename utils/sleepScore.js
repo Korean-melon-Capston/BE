@@ -1,4 +1,6 @@
-// 아기 개월 수 계산
+// -----------------------------------------------------------
+// 1) 아기 개월 수 계산
+// -----------------------------------------------------------
 export function getMonthAge(birthDate) {
   if (!birthDate) return 0;
 
@@ -11,10 +13,12 @@ export function getMonthAge(birthDate) {
 
   if (today.getDate() < birth.getDate()) months -= 1;
 
-  return months >= 0 ? months : 0;
+  return Math.max(months, 0);
 }
 
-// 개월 수 기준 권장 수면시간
+// -----------------------------------------------------------
+// 2) 개월 수 기준 권장 총 수면 시간
+// -----------------------------------------------------------
 export function getRecommendedSleepHours(monthAge) {
   if (monthAge <= 3) return 15.5;
   if (monthAge <= 11) return 13.5;
@@ -23,10 +27,13 @@ export function getRecommendedSleepHours(monthAge) {
   return 11.5;
 }
 
-// 총 수면시간 점수
+// -----------------------------------------------------------
+// 3) 총 수면 시간 점수 (0~100)
+// -----------------------------------------------------------
 export function calcSleepDurationScore(hours, birthDate) {
   const monthAge = getMonthAge(birthDate);
   const recommended = getRecommendedSleepHours(monthAge);
+
   const diff = Math.abs(hours - recommended);
 
   if (diff <= 0.5) return 100;
@@ -36,14 +43,18 @@ export function calcSleepDurationScore(hours, birthDate) {
   return 30;
 }
 
-// 취침시간 편차 점수 (30분 단위)
-export function calcBedtimeConsistency(startTimes) {
-  if (!startTimes || startTimes.length === 0) return 0;
+// -----------------------------------------------------------
+// 4) 취침 시각 일관성 점수 (0~100)
+// -----------------------------------------------------------
+export function calcBedtimeConsistency(startTimes = []) {
+  if (!Array.isArray(startTimes) || startTimes.length === 0) return 0;
 
-  const times = startTimes.map((t) => {
-    const d = new Date(t);
-    return d.getHours() + d.getMinutes() / 60;
-  });
+  const times = startTimes
+    .map((t) => new Date(t))
+    .filter((d) => !isNaN(d)) // 잘못된 날짜 필터링
+    .map((d) => d.getHours() + d.getMinutes() / 60);
+
+  if (times.length === 0) return 0;
 
   const diff = Math.max(...times) - Math.min(...times);
 
@@ -54,9 +65,12 @@ export function calcBedtimeConsistency(startTimes) {
   return 35;
 }
 
-// 이벤트(뒤척임 & 낙상) 점수
+// -----------------------------------------------------------
+// 5) 이벤트 점수 (0~20)
+// movementCount / fallCount 기반
+// -----------------------------------------------------------
 export function calcEventRiskScore({ movementCount = 0, fallCount = 0 }) {
-  // 낙상 위험 점수
+  // 낙상 점수
   let fallScore = 0;
   if (fallCount === 0) fallScore = 10;
   else if (fallCount === 1) fallScore = 5;
@@ -69,38 +83,40 @@ export function calcEventRiskScore({ movementCount = 0, fallCount = 0 }) {
   else if (movementCount <= 10) movementScore = 3;
   else movementScore = 1;
 
-  return fallScore + movementScore; // 총 20점
+  // 총합 0~20
+  return fallScore + movementScore;
 }
 
-/*
-  records 예시:
-  latest: [{ total_sleeptime, sleep_start }]
-  range:  [{ total_sleeptime, first_sleep_start }]
-*/
+// -----------------------------------------------------------
+// 6) 최종 수면 점수 계산 (0~100)
+// duration: 40%, consistency: 40%, events: 20%
+// -----------------------------------------------------------
 export function calculateFinalSleepScore(records, baby_birth, eventCounts = {}) {
   if (!records || records.length === 0) return 0;
 
-  const sleepHours = records.map((r) => r.total_sleeptime);
+  // total_sleeptime 안전 변환
+  const sleepHours = records.map((r) => Number(r.total_sleeptime) || 0);
+
+  // 취침 시각 안전 추출
   const startTimes = records.map(
     (r) => r.sleep_start || r.first_sleep_start
   );
 
-  // 총 수면 시간 점수 (100점 max)
-  const durationScore = calcSleepDurationScore(
-    sleepHours[0],
-    baby_birth
-  );
+  // ① 총 수면 시간 점수
+  const durationScore = calcSleepDurationScore(sleepHours[0], baby_birth);
 
-  // 취침 시간 편차 점수 (100점 max)
+  // ② 취침 시간 일관성 점수
   const consistencyScore = calcBedtimeConsistency(startTimes);
 
-  // 이벤트 점수 (20점 max)
+  // ③ 이벤트 점수 (movement + fall)
   const eventScore = calcEventRiskScore(eventCounts);
 
-  // 비율 적용
-  return Math.round(
-    durationScore * 0.4 +      // 40%
-    consistencyScore * 0.4 +   // 40%
-    eventScore * 0.2           // 20%
-  );
+  // ④ 최종 점수 계산 (가중치 기반)
+  let finalScore =
+    durationScore * 0.4 +
+    consistencyScore * 0.4 +
+    eventScore * 0.2;
+
+  // 안전 장치: 최소 0점
+  return Math.round(Math.max(finalScore, 0));
 }

@@ -148,9 +148,18 @@ export const createLatestReport = async (req, res) => {
     const sleepStart = new Date(latest.sleep_start);
     const sleepEnd = new Date(latest.sleep_end);
 
-    // total_sleeptime fallback 계산
+    // fallback(순수 시간 차) 계산
     const fallbackHours = (sleepEnd - sleepStart) / (1000 * 60 * 60);
-    const totalSleep = latest.total_sleeptime ?? fallbackHours;
+
+    // 🔥 total_sleeptime 문자열 → 숫자로 안전 변환
+    const rawTotal = latest.total_sleeptime;
+    let totalSleep = fallbackHours;
+    if (rawTotal !== null && rawTotal !== undefined) {
+      const n = Number(rawTotal);
+      if (Number.isFinite(n)) {
+        totalSleep = n;
+      }
+    }
 
     // 이벤트 조회
     const events = await findEventsWithinRange(
@@ -174,7 +183,7 @@ export const createLatestReport = async (req, res) => {
   - 낙상 감지: ${fallCount}회
 `;
 
-    // 리포트 텍스트 구성
+    // 리포트 텍스트 구성 (여기서 totalSleep은 확실히 number)
     const recordsText = `
 · 수면: ${sleepStart.toLocaleString("ko-KR")} ~ ${sleepEnd.toLocaleString("ko-KR")}
 · 총 수면 시간: 약 ${totalSleep.toFixed(1)}시간
@@ -212,7 +221,6 @@ ${recordsText}
 반드시 섹션 제목과 bullet 포맷 유지.
 `.trim();
 
-    // GPT 호출
     const completion = await openai.chat.completions.create({
       model: "gpt-5.1",
       messages: [{ role: "user", content: prompt }],
@@ -222,7 +230,6 @@ ${recordsText}
     const aiRecommendation =
       completion.choices[0].message.content.trim();
 
-    // DB 저장
     const newReport = await Report.create({
       user_id,
       report_date: toDateString(new Date()),
@@ -257,7 +264,6 @@ export const createReportWithAIRange = async (req, res) => {
     if (!start_date || !end_date)
       return res.status(400).json({ message: "start_date, end_date는 필수입니다." });
 
-    // 밤잠/낮잠 기준으로 하루 total_sleeptime 합산
     const records = await Record.findDailyTotalSleep(
       user_id,
       start_date,
@@ -267,14 +273,25 @@ export const createReportWithAIRange = async (req, res) => {
     if (!records || records.length === 0)
       return res.status(400).json({ message: "해당 기간 수면 데이터가 없습니다." });
 
+    // 🔥 total_sleeptime 문자열 → 숫자로 정규화
+    const normalizedRecords = records.map((r) => {
+      const n = Number(r.total_sleeptime);
+      const total = Number.isFinite(n) ? n : 0;
+      return {
+        ...r,
+        total_sleeptime: total,
+      };
+    });
+
     // users 테이블에서 아기 생일 조회
     const user = await User.findUserById(user_id);
     const baby_birth = user?.baby_birthday ?? null;
 
     // 이벤트 제외 → eventCounts 전달 X
-    const finalScore = calculateFinalSleepScore(records, baby_birth);
+    const finalScore = calculateFinalSleepScore(normalizedRecords, baby_birth);
 
-    const recordsText = records
+    // 여기서도 normalizedRecords 사용 – number라서 toFixed 안전
+    const recordsText = normalizedRecords
       .map((r, idx) => {
         return `· [${idx + 1}] ${r.sleep_date} / 총수면시간 약 ${r.total_sleeptime.toFixed(
           1
