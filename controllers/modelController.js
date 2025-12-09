@@ -15,8 +15,11 @@ const MODEL_SERVER_URL =
  */
 export const inferFromModelServer = async (req, res) => {
   try {
-    const { imageBase64, timestamp } = req.body;
-    const userId = req.user?.id;
+    const { imageBase64, timestamp, userId: bodyUserId } = req.body || {};
+    const tokenUserId = req.user?.id;
+    const queryUserId = req.query?.userId;
+    // 🔹 우선순위: 토큰 > body > query (없으면 그냥 undefined로 두고, 낙상 판정만 스킵)
+    const userId = tokenUserId ?? bodyUserId ?? queryUserId ?? 1;
 
     // 입력 값 검증
     if (!imageBase64) {
@@ -52,7 +55,13 @@ export const inferFromModelServer = async (req, res) => {
     // 3️⃣ 모델서버에서 받은 최신 결과를 서버 메모리에 저장 (모션 감지용)
     const modelResult = response.data;
     let fallDetected = false;
-    setLatestResult(modelResult);
+
+    // 🔹 timestamp 누락 방지를 위해 보정해서 저장
+    const modelResultWithTs = {
+      ...modelResult,
+      timestamp: modelResult?.timestamp ?? ts,
+    };
+    setLatestResult(modelResultWithTs);
 
     // 🔹 뒤척임 감지도 여기서 함께 수행
     try {
@@ -72,8 +81,8 @@ export const inferFromModelServer = async (req, res) => {
 
     // 4️⃣ 포즈 정보도 WebSocket으로 부모폰에 전달 (옵션)
     try {
-      if (modelResult) {
-        const { bboxes = [], keypoints = [], timestamp: modelTs } = modelResult;
+      if (modelResultWithTs) {
+        const { bboxes = [], keypoints = [], timestamp: modelTs } = modelResultWithTs;
 
         if ((bboxes && bboxes.length > 0) || (keypoints && keypoints.length > 0)) {
           broadcastPose({
@@ -91,8 +100,12 @@ export const inferFromModelServer = async (req, res) => {
     try {
       if (!userId) {
         console.log("ℹ️ [FallDetection] userId 없음 → 낙상 판정 스킵");
-      } else if (modelResult && Array.isArray(modelResult.keypoints) && modelResult.keypoints.length > 0) {
-        const fall = await isOutOfBedROI(modelResult.keypoints, userId);
+      } else if (
+        modelResultWithTs &&
+        Array.isArray(modelResultWithTs.keypoints) &&
+        modelResultWithTs.keypoints.length > 0
+      ) {
+        const fall = await isOutOfBedROI(modelResultWithTs.keypoints, userId);
         fallDetected = !!fall;
 
         if (fallDetected) {
