@@ -9,6 +9,7 @@ import { calculateFinalSleepScore } from "../utils/sleepScore.js";
  * 그래프용 데이터 반환
  * - 하루 total sleep
  * - movement count
+ * - fall count
  * - sleep score
  */
 export const getGraphData = async (req, res) => {
@@ -24,7 +25,7 @@ export const getGraphData = async (req, res) => {
       return res.status(400).json({ message: "start_date, end_date는 필수입니다." });
     }
 
-    // 1) 밤잠/낮잠 기준 합산 수면데이터
+    // 1) 밤잠/낮잠 기준 하루 total sleep 합산
     const dailyRecords = await Record.findDailyTotalSleep(
       user_id,
       start_date,
@@ -35,12 +36,13 @@ export const getGraphData = async (req, res) => {
       return res.status(400).json({ message: "해당 기간 수면 데이터가 없습니다." });
     }
 
-    // 2) 아기 생일 → score 계산에 필요
+    // 2) score 계산을 위한 아기 생일 불러오기
     const user = await User.findUserById(user_id);
     const baby_birth = user?.baby_birthday ?? null;
 
     const sleepHoursGraph = [];
     const movementGraph = [];
+    const fallGraph = [];
     const scoreGraph = [];
 
     for (const record of dailyRecords) {
@@ -56,16 +58,23 @@ export const getGraphData = async (req, res) => {
          AND DATE(event_time) = ?`,
         [user_id, targetDate]
       );
-
       const movementCount = movementRows[0]?.cnt ?? 0;
 
-      // score 계산
-      const score = calculateFinalSleepScore(
-        [record],
-        baby_birth
+      // fall count 조회
+      const [fallRows] = await db.execute(
+        `SELECT COUNT(*) AS cnt
+         FROM events
+         WHERE user_id = ?
+         AND event_type = 'fall'
+         AND DATE(event_time) = ?`,
+        [user_id, targetDate]
       );
+      const fallCount = fallRows[0]?.cnt ?? 0;
 
-      // 그래프용 배열에 적재
+      // score 계산
+      const score = calculateFinalSleepScore([record], baby_birth);
+
+      // 그래프용 데이터 저장
       sleepHoursGraph.push({
         date: targetDate,
         hours: sleepHours,
@@ -74,6 +83,11 @@ export const getGraphData = async (req, res) => {
       movementGraph.push({
         date: targetDate,
         count: movementCount,
+      });
+
+      fallGraph.push({
+        date: targetDate,
+        count: fallCount,
       });
 
       scoreGraph.push({
@@ -87,6 +101,7 @@ export const getGraphData = async (req, res) => {
       data: {
         sleepHours: sleepHoursGraph,
         movement: movementGraph,
+        fall: fallGraph,
         score: scoreGraph,
       },
     });
