@@ -20,6 +20,7 @@ import eventLogRoutes from "./routes/eventRoutes.js";
 import graphRoutes from "./routes/graphRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import modelRoutes from "./routes/modelRoutes.js";
+import roiRoutes from "./routes/roiRoutes.js";
 
 // 🔹 WebSocket 초기화 함수
 import { initWebSocket } from "./utils/wsServer.js";
@@ -46,6 +47,7 @@ app.use("/eventlog", eventLogRoutes);
 app.use("/api/graph", graphRoutes);
 app.use("/api/notify", notificationRoutes);
 app.use("/api/model", modelRoutes);
+app.use("/api/roi", roiRoutes);
 
 // Swagger
 swaggerSetup(app);
