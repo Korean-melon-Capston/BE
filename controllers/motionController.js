@@ -60,7 +60,7 @@ export async function detectMotion() {
   if (previousKeypoints) {
     movement = calculateMotion(person, previousKeypoints);
 
-    if (movement > 1) {
+    if (movement > 20) {
       turnCount++;
       console.log(
         `🌀 [MOTION DETECTED] movement=${movement.toFixed(
