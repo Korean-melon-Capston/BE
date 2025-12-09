@@ -17,18 +17,14 @@ export function initWebSocket(server) {
       try {
         const msg = JSON.parse(data.toString());
 
-        // 아기폰이 보내는 형식: { type: "frame", imageBase64: "..." }
+        // 아기폰이 WS 로 직접 프레임을 보낼 경우
         if (msg.type === "frame" && msg.imageBase64) {
-          // 🔥 모든 클라이언트(=부모폰들)에게 프레임 브로드캐스트
-          broadcastRaw({
-            type: "frame",
+          console.log("📥 [WS] frame 수신 → 브로드캐스트");
+          broadcastFrame({
             imageBase64: msg.imageBase64,
+            timestamp: msg.timestamp,
           });
         }
-
-        // 나중에 확장: motion, fall 등도 여기에서 처리 가능
-        // if (msg.type === "motion") { ... }
-        // if (msg.type === "fall") { ... }
 
       } catch (e) {
         console.log("📩 WS raw message:", data.toString());
@@ -47,77 +43,95 @@ export function initWebSocket(server) {
   console.log("✅ WebSocket 서버 초기화 완료");
 }
 
+
+
+/** 공통 브로드캐스트 헬퍼 */
 function broadcastRaw(obj) {
   if (!wss) return;
 
   const data = JSON.stringify(obj);
+  let count = 0;
 
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
+      count++;
     }
+  });
+
+  console.log(`📡 [WS] broadcastRaw → type: ${obj.type}, 전송 대상: ${count}명`);
+}
+
+
+
+/**
+ * 🔹 아기폰 프레임을 부모폰으로 브로드캐스트
+ *  - type: "frame"
+ */
+export function broadcastFrame({ imageBase64, timestamp }) {
+  if (!imageBase64) {
+    console.log("⚠️ broadcastFrame 호출됨: imageBase64 없음");
+    return;
+  }
+
+  console.log("📤 [WS] broadcastFrame 실행");
+
+  broadcastRaw({
+    type: "frame",
+    imageBase64,
+    timestamp: timestamp ?? Date.now(),
   });
 }
 
-// ====== 외부에서 모델 결과/이벤트를 부모폰으로 보내기 위한 헬퍼 ======
+
 
 /**
- * 모델 추론 결과(키포인트, 바운딩 박스)를 부모 웹소켓 클라이언트들에게 브로드캐스트
- * - controller에서 모델 서버 응답 받은 후 호출
+ * 🔹 모델 추론 결과(키포인트, 바운딩 박스)를 부모 웹소켓 클라이언트들에게 브로드캐스트
+ * - type: "pose"
  */
 export function broadcastPose({ bboxes, keypoints, timestamp }) {
-  if (!wss) return;
+  console.log("📤 [WS] broadcastPose 실행 (bbox:", bboxes?.length ?? 0, ")");
 
-  const data = JSON.stringify({
+  broadcastRaw({
     type: "pose",
     bboxes: bboxes || [],
     keypoints: keypoints || [],
     timestamp: timestamp || Date.now(),
   });
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
-  });
 }
 
+
+
 /**
- * 낙상(혹은 고위험자세) 이벤트를 부모 웹소켓 클라이언트들에게 브로드캐스트
+ * 🔹 낙상(혹은 고위험자세) 이벤트 브로드캐스트
+ * - type: "fall"
  */
 export function broadcastFallEvent(confidence, extra = {}) {
-  if (!wss) return;
+  console.log("📤 [WS] broadcastFallEvent 실행");
 
-  const data = JSON.stringify({
+  broadcastRaw({
     type: "fall",
     confidence: confidence ?? null,
     timestamp: Date.now(),
     ...extra,
   });
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
-  });
 }
 
+
+
 /**
- * 뒤척임(모션) 강도 정보를 부모 웹소켓 클라이언트들에게 브로드캐스트
+ * 🔹 뒤척임(모션) 강도 정보를 브로드캐스트
+ * - type: "motion"
  */
 export function broadcastMotion({ movement, timestamp, turnCount }) {
-  if (!wss) return;
+  console.log(
+    `📤 [WS] broadcastMotion 실행 (movement: ${movement}, turnCount: ${turnCount})`
+  );
 
-  const data = JSON.stringify({
+  broadcastRaw({
     type: "motion",
     movement: movement ?? 0,
     timestamp: timestamp ?? Date.now(),
     turnCount: turnCount ?? 0,
-  });
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
   });
 }
