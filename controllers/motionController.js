@@ -75,12 +75,12 @@ export async function detectMotion() {
       try {
         await saveEventLog({
           userId: 11,
-          eventType: "motion",
+          eventType: "movement",
           eventTime: new Date(timestamp),
           videoUrl: null,
         });
         console.log(
-          `✅ [MotionDetection] event saved (type=motion, userId=11, turns=${turnCount}, ts=${timestamp})`
+          `✅ [MotionDetection] event saved (type=movement, userId=11, turns=${turnCount}, ts=${timestamp})`
         );
       } catch (e) {
         console.error("❌ [MotionDetection] event save failed:", e?.message || e);
