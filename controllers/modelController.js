@@ -3,6 +3,7 @@ import axios from "axios";
 import { setLatestResult } from "../utils/resultStore.js";
 import { broadcastFrame, broadcastPose, broadcastFallEvent } from "../utils/wsServer.js";
 import { isOutOfBedROI } from "../models/fallDetectionModel.js";
+import { saveEventLog } from "../models/eventModel.js";
 import { detectMotion } from "./motionController.js";
 
 const MODEL_SERVER_URL =
@@ -15,11 +16,9 @@ const MODEL_SERVER_URL =
  */
 export const inferFromModelServer = async (req, res) => {
   try {
-    const { imageBase64, timestamp, userId: bodyUserId } = req.body || {};
-    const tokenUserId = req.user?.id;
-    const queryUserId = req.query?.userId;
-    // 🔹 우선순위: 토큰 > body > query (없으면 그냥 undefined로 두고, 낙상 판정만 스킵)
-    const userId = tokenUserId ?? bodyUserId ?? queryUserId ?? 11;
+    const { imageBase64, timestamp } = req.body || {};
+    // ✅ 테스트용: userId를 11로 고정 (나중에 토큰 기반으로 복구)
+    const userId = 11;
 
     // 입력 값 검증
     if (!imageBase64) {
@@ -111,6 +110,20 @@ export const inferFromModelServer = async (req, res) => {
         if (fallDetected) {
           const nowIso = new Date().toISOString();
           console.log(`🚨 [FallDetection] User ${userId} — FALL DETECTED at ${nowIso}`);
+
+          // ✅ DB 저장 (events 테이블)
+          try {
+            await saveEventLog({
+              userId,
+              eventType: "fall",
+              eventTime: nowIso,
+              videoUrl: null,
+            });
+            console.log(`✅ [FallDetection] DB saved (userId=${userId}, type=fall)`);
+          } catch (dbErr) {
+            console.error("❌ [FallDetection] DB save failed:", dbErr?.message || dbErr);
+          }
+
           // 필요 시 신뢰도(confidence)는 일단 1.0으로 고정, 나중에 모델에서 내려주면 교체
           broadcastFallEvent(1.0, { userId, detectedAt: nowIso });
         } else {
