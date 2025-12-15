@@ -74,7 +74,7 @@ export async function detectMotion() {
       // (나중에 JWT 연동되면 호출부에서 userId를 넘기도록 구조 개선)
       try {
         await saveEventLog({
-          userId: 1,
+          userId: 11,
           eventType: "motion",
           eventTime: new Date(timestamp),
           videoUrl: null,
