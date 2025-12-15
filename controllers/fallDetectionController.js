@@ -1,5 +1,6 @@
 // controllers/fallDetectionController.js
 import { isOutOfBedROI } from "../models/fallDetectionModel.js";
+import { saveFallEvent } from "../models/fallDetectionModel.js";
 
 export const detectFall = async (req, res) => {
   try {
@@ -16,6 +17,12 @@ export const detectFall = async (req, res) => {
 
     if (fall) {
       console.log(`🚨 [FallDetection] User ${userId} — FALL DETECTED at ${new Date().toISOString()}`);
+      try {
+        await saveFallEvent(userId);
+        console.log(`✅ [FallDetection] DB saved (userId=${userId})`);
+      } catch (dbErr) {
+        console.error("❌ [FallDetection] DB save failed:", dbErr.message);
+      }
     } else {
       console.log(`ℹ️ [FallDetection] User ${userId} — no fall detected`);
     }

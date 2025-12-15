@@ -19,7 +19,7 @@ export const inferFromModelServer = async (req, res) => {
     const tokenUserId = req.user?.id;
     const queryUserId = req.query?.userId;
     // 🔹 우선순위: 토큰 > body > query (없으면 그냥 undefined로 두고, 낙상 판정만 스킵)
-    const userId = tokenUserId ?? bodyUserId ?? queryUserId ?? 1;
+    const userId = tokenUserId ?? bodyUserId ?? queryUserId ?? 11;
 
     // 입력 값 검증
     if (!imageBase64) {

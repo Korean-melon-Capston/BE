@@ -2,6 +2,7 @@
 
 import { broadcastMotion } from "../utils/wsServer.js";
 import { getLatestResult } from "../utils/resultStore.js";
+import { saveMotionEvent } from "../models/motionModel.js";
 
 let previousKeypoints = null;
 let turnCount = 0;
@@ -67,6 +68,14 @@ export async function detectMotion() {
           3
         )}, turns=${turnCount}, ts=${timestamp}`
       );
+
+      // ✅ DB 저장 (turnCount 기준)
+      try {
+        await saveMotionEvent(turnCount);
+        console.log(`✅ [MotionDetection] DB saved (turnCount=${turnCount})`);
+      } catch (e) {
+        console.error("❌ [MotionDetection] DB save failed:", e?.message || e);
+      }
     } else {
       console.log(
         `ℹ️ [MOTION BELOW THRESHOLD] movement=${movement.toFixed(
