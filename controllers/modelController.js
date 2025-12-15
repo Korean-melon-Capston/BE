@@ -116,7 +116,7 @@ export const inferFromModelServer = async (req, res) => {
             await saveEventLog({
               userId,
               eventType: "fall",
-              eventTime: nowIso,
+              eventTime: new Date(),
               videoUrl: null,
             });
             console.log(`✅ [FallDetection] DB saved (userId=${userId}, type=fall)`);
