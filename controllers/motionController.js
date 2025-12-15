@@ -2,7 +2,7 @@
 
 import { broadcastMotion } from "../utils/wsServer.js";
 import { getLatestResult } from "../utils/resultStore.js";
-import { saveMotionEvent } from "../models/motionModel.js";
+import { saveEventLog } from "../models/eventModel.js";
 
 let previousKeypoints = null;
 let turnCount = 0;
@@ -69,18 +69,27 @@ export async function detectMotion() {
         )}, turns=${turnCount}, ts=${timestamp}`
       );
 
-      // ✅ DB 저장 (turnCount 기준)
+      // ✅ DB 저장 (events 테이블에 motion 이벤트로 저장)
+      // detectMotion()은 req/res가 없어서 일단 테스트용으로 userId=1 고정
+      // (나중에 JWT 연동되면 호출부에서 userId를 넘기도록 구조 개선)
       try {
-        await saveMotionEvent(turnCount);
-        console.log(`✅ [MotionDetection] DB saved (turnCount=${turnCount})`);
+        await saveEventLog({
+          userId: 1,
+          eventType: "motion",
+          eventTime: new Date(timestamp),
+          videoUrl: null,
+        });
+        console.log(
+          `✅ [MotionDetection] event saved (type=motion, userId=11, turns=${turnCount}, ts=${timestamp})`
+        );
       } catch (e) {
-        console.error("❌ [MotionDetection] DB save failed:", e?.message || e);
+        console.error("❌ [MotionDetection] event save failed:", e?.message || e);
       }
     } else {
       console.log(
         `ℹ️ [MOTION BELOW THRESHOLD] movement=${movement.toFixed(
           3
-        )}, threshold=1`
+        )}, threshold=20`
       );
     }
 

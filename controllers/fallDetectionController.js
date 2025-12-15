@@ -1,15 +1,16 @@
 // controllers/fallDetectionController.js
 import { isOutOfBedROI } from "../models/fallDetectionModel.js";
-import { saveFallEvent } from "../models/fallDetectionModel.js";
+import { saveEventLog } from "../models/eventModel.js";
 
 export const detectFall = async (req, res) => {
   try {
     const { keypoints } = req.body;
-    const userId = req.user?.id;  // 🔥 토큰 기반 userId 사용
+    // 🔥 토큰 기반 userId 사용 (테스트 중이면 토큰 없을 때 1로 강제)
+    const userId = req.user?.id ?? 11;
 
-    if (!keypoints || !userId) {
+    if (!keypoints) {
       return res.status(400).json({
-        message: "keypoints 또는 userId 누락",
+        message: "keypoints 누락",
       });
     }
 
@@ -18,8 +19,14 @@ export const detectFall = async (req, res) => {
     if (fall) {
       console.log(`🚨 [FallDetection] User ${userId} — FALL DETECTED at ${new Date().toISOString()}`);
       try {
-        await saveFallEvent(userId);
-        console.log(`✅ [FallDetection] DB saved (userId=${userId})`);
+        const now = new Date();
+        await saveEventLog({
+          userId,
+          eventType: "fall",
+          eventTime: now.toISOString(),
+          videoUrl: null,
+        });
+        console.log(`✅ [FallDetection] DB saved (userId=${userId}, type=fall)`);
       } catch (dbErr) {
         console.error("❌ [FallDetection] DB save failed:", dbErr.message);
       }
